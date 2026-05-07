@@ -480,6 +480,11 @@ func (c *QUICController) doHandleConnection(ctx context.Context, conn *quic.Conn
 	dctx := newDctx(sess, conn, c.tunWriteCh, c.svcCIDRs, c.mtu)
 
 	c.dctxMap.Lock()
+	if _, ok := c.dctxMap.dctxMap[sess.Metadata.Uid]; ok {
+		c.dctxMap.Unlock()
+		return errors.Errorf("Session is already connected")
+	}
+
 	c.dctxMap.dctxMap[dctx.id] = dctx
 	c.dctxMap.Unlock()
 

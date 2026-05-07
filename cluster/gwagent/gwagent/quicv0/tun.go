@@ -227,9 +227,9 @@ func (s *QUICController) startProcessPacketLoop(ctx context.Context) {
 func (s *QUICController) doProcessTunPacket(pkt []byte) {
 
 	s.lookupMap.RLock()
-	defer s.lookupMap.RUnlock()
-
 	dctx := s.getDctxFromTunPacket(pkt)
+	s.lookupMap.RUnlock()
+
 	if dctx == nil {
 		return
 	}
@@ -294,8 +294,15 @@ func (s *QUICController) startTunRecvFromDevLoop(ctx context.Context) {
 			}
 
 			for i := 0; i < n; i++ {
-				pktBuf := buffs[i][tunPacketOffset : sizes[i]+tunPacketOffset]
-				s.tunReadCh <- pktBuf
+				pktLen := sizes[i]
+				pktCopy := make([]byte, pktLen)
+				copy(pktCopy, buffs[i][tunPacketOffset:pktLen+tunPacketOffset])
+
+				select {
+				case s.tunReadCh <- pktCopy:
+				case <-ctx.Done():
+					return
+				}
 			}
 
 		}

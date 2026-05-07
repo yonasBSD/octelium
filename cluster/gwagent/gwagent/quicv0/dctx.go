@@ -131,7 +131,11 @@ func (d *dctx) startProcessLoop(ctx context.Context) {
 			return
 		case buf := <-d.processCh:
 			if d.isPacketValid(buf) {
-				d.tunCh <- buf
+				select {
+				case d.tunCh <- buf:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}
@@ -139,7 +143,7 @@ func (d *dctx) startProcessLoop(ctx context.Context) {
 
 func (d *dctx) isPacketValid(buf []byte) bool {
 	lenBuf := len(buf)
-	if lenBuf <= ipv4.HeaderLen || lenBuf > d.mtu {
+	if lenBuf < ipv4.HeaderLen || lenBuf > d.mtu {
 		return false
 	}
 
@@ -156,7 +160,7 @@ func (d *dctx) isPacketValid(buf []byte) bool {
 		src = netip.AddrFrom4(srcBytes)
 		dst = netip.AddrFrom4(dstBytes)
 	case ipv6.Version:
-		if lenBuf <= 40 {
+		if lenBuf < ipv6.HeaderLen {
 			return false
 		}
 
@@ -215,10 +219,14 @@ func (d *dctx) startReceiveLoop(ctx context.Context) {
 				continue
 			}
 			lenMsg := len(msg)
-			if lenMsg <= ipv4.HeaderLen || lenMsg > mtu {
+			if lenMsg < ipv4.HeaderLen || lenMsg > mtu {
 				continue
 			}
-			d.processCh <- msg
+			select {
+			case d.processCh <- msg:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}
 }
