@@ -151,6 +151,8 @@ func (s *Server) doGet(ctx context.Context, req *rmetav1.GetOptions, api, versio
 	}
 
 	if err := pbutils.UnmarshalJSON(attr, ret); err != nil {
+		zap.L().Warn("Could not unmarshalJSON in doList",
+			zap.Any("data", attr), zap.Error(err))
 		return nil, rerr.InternalWithErr(err)
 	}
 
@@ -497,6 +499,8 @@ func (s *Server) doList(ctx context.Context,
 		}
 
 		if err := pbutils.UnmarshalJSON(data, obj); err != nil {
+			zap.L().Warn("Could not unmarshalJSON in doList",
+				zap.Any("data", data), zap.Error(err))
 			return nil, nil, rerr.InternalWithErr(err)
 		}
 		retItems = append(retItems, obj)

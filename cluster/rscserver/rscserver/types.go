@@ -19,6 +19,7 @@ package rscserver
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/doug-martin/goqu/v9"
@@ -29,6 +30,7 @@ import (
 	"github.com/octelium/octelium/cluster/rscserver/rscserver/rerr"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -77,6 +79,18 @@ func (s *Server) toResourceList(lst []umetav1.ResourceObjectI, listMeta *metav1.
 	return objList, nil
 }
 
+var rgxFieldComponent = regexp.MustCompile(`^[a-z][a-zA-Z0-9]{0,127}$`)
+
+func validateFieldParts(args []string) error {
+	for _, arg := range args {
+		if !rgxFieldComponent.MatchString(arg) {
+			return errors.Errorf("Invalid field name: %s", arg)
+		}
+	}
+
+	return nil
+}
+
 func getListFilters(req *rmetav1.ListOptions) []exp.Expression {
 	var ret []exp.Expression
 
@@ -84,6 +98,11 @@ func getListFilters(req *rmetav1.ListOptions) []exp.Expression {
 		retFilter := "resource"
 
 		args := strings.Split(filter.Field, ".")
+
+		if err := validateFieldParts(args); err != nil {
+			zap.L().Warn("Could not validateFieldParts", zap.Error(err))
+			continue
+		}
 
 		for idx := 0; idx < len(args)-1; idx++ {
 			retFilter = fmt.Sprintf(`%s->'%s'`, retFilter, args[idx])
