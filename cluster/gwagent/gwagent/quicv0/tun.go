@@ -18,11 +18,9 @@ package quicv0
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/netip"
 	"os"
-	"os/exec"
 
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -88,22 +86,8 @@ func (s *QUICController) createTunDev(ctx context.Context, gw *corev1.Gateway, c
 
 	zap.L().Debug("Creating tun dev", zap.Int("mtu", ucorev1.ToClusterConfig(cc).GetDevMTUQUIV0()))
 
-	if ldflags.IsTest() {
-		quicV0TunPath = "/dev/net/tun"
-	} else {
-		os.Remove(quicV0TunPath)
-	}
-
-	cmds := []string{
-		"mkdir -p /dev/net",
-		fmt.Sprintf("mknod %s c 10 200", quicV0TunPath),
-		fmt.Sprintf("chmod 600 %s", quicV0TunPath),
-	}
-
-	for _, cmd := range cmds {
-		if err := exec.Command("sh", "-c", cmd).Run(); err != nil {
-			zap.L().Error("Could not mknod quicV0 device", zap.Error(err))
-		}
+	if err := s.prepareTUN(); err != nil {
+		return err
 	}
 
 	s.tundev, err = createTUN(devName, ucorev1.ToClusterConfig(cc).GetDevMTUQUIV0())
@@ -183,6 +167,44 @@ func (s *QUICController) createTunDev(ctx context.Context, gw *corev1.Gateway, c
 	}
 
 	zap.L().Debug("QUICv0 tun dev successfully created")
+
+	return nil
+}
+
+func (s *QUICController) prepareTUN() error {
+	if ldflags.IsTest() {
+		quicV0TunPath = "/dev/net/tun"
+	} else {
+		os.Remove(quicV0TunPath)
+	}
+	zap.L().Debug("Checking whether /dev/net/tun exists")
+	_, err := os.Stat(quicV0TunPath)
+	if err == nil {
+		zap.L().Debug("QUIC tun dev exists. No mknod needed")
+		return nil
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+
+	zap.L().Debug("creating QUIC tun dev", zap.String("path", quicV0TunPath))
+
+	if err := os.MkdirAll("/dev/net", 0755); err != nil {
+		return errors.Errorf("could not create /dev/net directory: %+v", err)
+	}
+
+	mode := uint32(unix.S_IFCHR | 0600)
+
+	dev := int(unix.Mkdev(10, 200))
+
+	if err := unix.Mknod(quicV0TunPath, mode, dev); err != nil {
+		if err == unix.EPERM {
+			zap.L().Warn(
+				"Could not create QUIC tun dev. Missing CAP_MKNOD or insufficient privileges", zap.Error(err))
+		}
+
+		return errors.Errorf("Could not create QUIC tun dev: %+v", err)
+	}
 
 	return nil
 }
