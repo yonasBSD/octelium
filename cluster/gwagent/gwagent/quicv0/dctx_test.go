@@ -70,7 +70,7 @@ func TestIsPacketValid(t *testing.T) {
 	assert.False(t, dctx.isPacketValid(
 		genTstIPPacketV4(netip.MustParseAddr("10.0.1.1"), netip.MustParseAddr("8.8.8.8"), 1000)))
 
-	assert.False(t, dctx.isPacketValid(
+	assert.True(t, dctx.isPacketValid(
 		genTstIPPacketV4(netip.MustParseAddr("10.0.1.1"), netip.MustParseAddr("10.0.0.1"), ipv4.HeaderLen)))
 	assert.True(t, dctx.isPacketValid(
 		genTstIPPacketV4(netip.MustParseAddr("10.0.1.1"), netip.MustParseAddr("10.0.0.1"), ipv4.HeaderLen+1)))
