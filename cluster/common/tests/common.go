@@ -125,7 +125,10 @@ func InitLog() error {
 		ErrorOutputPaths: []string{"stderr"},
 	}
 
-	logger, err := zapCfg.Build()
+	logger, err := zapCfg.Build(
+		zap.AddCaller(),
+		zap.AddStacktrace(zap.WarnLevel),
+	)
 	if err != nil {
 		return err
 	}

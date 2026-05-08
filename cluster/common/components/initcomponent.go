@@ -37,7 +37,7 @@ func init() {
 type initComponentOpts struct {
 }
 
-func initComponent(ctx context.Context, opts *initComponentOpts) error {
+func initComponent(_ context.Context, _ *initComponentOpts) error {
 
 	if myComponentNS == "" {
 		myComponentNS = ComponentNamespaceOctelium
@@ -63,23 +63,39 @@ func initComponent(ctx context.Context, opts *initComponentOpts) error {
 		OutputPaths:      []string{"stderr"},
 		ErrorOutputPaths: []string{"stderr"},
 
+		Sampling: func() *zap.SamplingConfig {
+			if ldflags.IsDev() {
+				return nil
+			}
+
+			return &zap.SamplingConfig{
+				Initial:    100,
+				Thereafter: 100,
+			}
+		}(),
+
 		EncoderConfig: zapcore.EncoderConfig{
-			TimeKey:        "ts",
-			LevelKey:       "level",
-			NameKey:        "logger",
-			CallerKey:      "caller",
-			FunctionKey:    zapcore.OmitKey,
-			MessageKey:     "msg",
-			StacktraceKey:  "stacktrace",
-			LineEnding:     zapcore.DefaultLineEnding,
-			EncodeLevel:    zapcore.LowercaseLevelEncoder,
-			EncodeTime:     zapcore.RFC3339NanoTimeEncoder,
+			TimeKey:       "ts",
+			LevelKey:      "level",
+			NameKey:       "logger",
+			CallerKey:     "caller",
+			FunctionKey:   zapcore.OmitKey,
+			MessageKey:    "msg",
+			StacktraceKey: "stacktrace",
+			LineEnding:    zapcore.DefaultLineEnding,
+			EncodeLevel:   zapcore.LowercaseLevelEncoder,
+			EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+				enc.AppendString(t.UTC().Format(time.RFC3339Nano))
+			},
 			EncodeDuration: zapcore.MillisDurationEncoder,
 			EncodeCaller:   zapcore.FullCallerEncoder,
 		},
 	}
 
-	stdoutLogger, err := zapCfg.Build()
+	stdoutLogger, err := zapCfg.Build(
+		zap.AddCaller(),
+		zap.AddStacktrace(zap.WarnLevel),
+	)
 	if err != nil {
 		return err
 	}
