@@ -26,6 +26,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/cluster/rscserver/rscserver/rerr"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"go.uber.org/zap"
@@ -53,7 +54,7 @@ func (s *Server) toResourceList(lst []umetav1.ResourceObjectI, listMeta *metav1.
 	for _, itm := range lst {
 		objMap, err := pbutils.ConvertToMap(itm)
 		if err != nil {
-			return nil, err
+			return nil, rerr.InternalWithErr(err)
 		}
 		itemsMap = append(itemsMap, objMap)
 	}
@@ -61,16 +62,16 @@ func (s *Server) toResourceList(lst []umetav1.ResourceObjectI, listMeta *metav1.
 	retMap["items"] = itemsMap
 	jsonBytes, err := json.Marshal(retMap)
 	if err != nil {
-		return nil, err
+		return nil, rerr.InternalWithErr(err)
 	}
 
 	objList, err := s.opts.NewResourceObjectList(api, version, kind)
 	if err != nil {
-		return nil, err
+		return nil, rerr.InternalWithErr(err)
 	}
 
 	if err := pbutils.UnmarshalJSON(jsonBytes, objList); err != nil {
-		return nil, err
+		return nil, rerr.InternalWithErr(err)
 	}
 
 	return objList, nil
