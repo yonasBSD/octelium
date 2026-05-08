@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/doug-martin/goqu/v9"
@@ -715,15 +716,17 @@ func (s *Server) doSetCache(ctx context.Context, itm umetav1.ResourceObjectI, ap
 	itmBytes, _ := pbutils.Marshal(itm)
 
 	if _, err := s.redisC.Set(ctx,
-		getObjectKeyByName(api, version, kind, md.Name), string(itmBytes), 0).Result(); err != nil {
+		getObjectKeyByName(api, version, kind, md.Name), string(itmBytes), cacheResourceTTL).Result(); err != nil {
 		zap.L().Warn("Could not set redis object",
 			zap.String("key", getObjectKeyByName(api, version, kind, md.Name)), zap.Error(err))
 	}
-	if _, err := s.redisC.Set(ctx, getObjectKeyByUID(md.Uid), string(itmBytes), 0).Result(); err != nil {
+	if _, err := s.redisC.Set(ctx, getObjectKeyByUID(md.Uid), string(itmBytes), cacheResourceTTL).Result(); err != nil {
 		zap.L().Warn("Could not set redis object",
 			zap.String("key", getObjectKeyByUID(md.Uid)), zap.Error(err))
 	}
 }
+
+const cacheResourceTTL = 5 * time.Minute
 
 func (s *Server) doDeleteCache(ctx context.Context, itm umetav1.ResourceObjectI, api, version, kind string) {
 	md := itm.GetMetadata()
