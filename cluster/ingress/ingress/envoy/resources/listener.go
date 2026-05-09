@@ -276,11 +276,10 @@ func getHttpConnManagerFilterMain(ctx context.Context, r *GetListenersReq) (*lis
 		},
 		MaxRequestHeadersKb: &wrapperspb.UInt32Value{Value: 32},
 
-		// TODO: This value might need to be changed in the future
 		StreamIdleTimeout: &durationpb.Duration{
-			Seconds: idleTimeoutSeconds,
-			Nanos:   0,
+			Seconds: 3600,
 		},
+
 		RequestTimeout: &durationpb.Duration{
 			Seconds: 0,
 			Nanos:   0,
@@ -297,7 +296,7 @@ func getHttpConnManagerFilterMain(ctx context.Context, r *GetListenersReq) (*lis
 		XffNumTrustedHops: func() uint32 {
 			if cc.Spec.Ingress != nil &&
 				cc.Spec.Ingress.XffNumTrustedHops > 0 &&
-				cc.Spec.Ingress.XffNumTrustedHops < 10000 {
+				cc.Spec.Ingress.XffNumTrustedHops < 12 {
 				return uint32(cc.Spec.Ingress.XffNumTrustedHops)
 			}
 			return 0
@@ -505,6 +504,3 @@ func getHttpFiltersMain() ([]*envoyhcm.HttpFilter, error) {
 
 	return filters, nil
 }
-
-// TODO: Non-zero values simply breaks streaming (e.g. gRPC API streaming-based methods)
-const idleTimeoutSeconds = 0

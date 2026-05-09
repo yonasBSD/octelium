@@ -152,8 +152,8 @@ func getRoutesMain(domain string, svcList []*corev1.Service) ([]*routev3.Route, 
 						zap.Any("service", svc.Metadata.Name),
 						zap.String("path", strings.TrimSpace(path)))
 				*/
-				routeAPIServer, err := getRouteMain(domain,
-					strings.TrimSpace(path), true, getClusterNameFromService(svc))
+				routeAPIServer, err := getRouteAPIServer(
+					strings.TrimSpace(path), getClusterNameFromService(svc))
 				if err != nil {
 					return nil, err
 				}
@@ -171,7 +171,7 @@ func isAPIServer(svc *corev1.Service) bool {
 		svc.Metadata.SystemLabels["apiserver-path"] != ""
 }
 
-func getRouteMain(domain string, prefix string, isGRPC bool, cluster string) (*routev3.Route, error) {
+func getRouteAPIServer(prefix string, cluster string) (*routev3.Route, error) {
 
 	route := &routev3.Route{
 		RequestHeadersToAdd: []*corev3.HeaderValueOption{
@@ -199,7 +199,7 @@ func getRouteMain(domain string, prefix string, isGRPC bool, cluster string) (*r
 				},
 
 				IdleTimeout: &durationpb.Duration{
-					Seconds: idleTimeoutSeconds,
+					Seconds: 86400,
 					Nanos:   0,
 				},
 
@@ -281,8 +281,17 @@ func getRoutesService(svc *corev1.Service, domain string) ([]*routev3.Route, err
 					Nanos:   0,
 				},
 				IdleTimeout: &durationpb.Duration{
-					Seconds: idleTimeoutSeconds,
+					Seconds: 3600,
 					Nanos:   0,
+				},
+
+				MaxStreamDuration: &routev3.RouteAction_MaxStreamDuration{
+					MaxStreamDuration: &durationpb.Duration{
+						Seconds: 86400,
+					},
+					GrpcTimeoutHeaderMax: &durationpb.Duration{
+						Seconds: 86400,
+					},
 				},
 
 				HostRewriteSpecifier: &routev3.RouteAction_HostRewriteLiteral{
