@@ -22,6 +22,7 @@ import (
 	"github.com/octelium/octelium/apis/main/userv1"
 	"github.com/octelium/octelium/client/octelium/commands/connect/controller"
 	"github.com/octelium/octelium/client/octelium/commands/connect/proxy"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -56,7 +57,31 @@ func newStateController(c *cliconfigv1.Connection,
 func (c *stateController) Start(ctx context.Context) error {
 	zap.L().Debug("Starting state controller")
 	go c.doStartLoop(ctx)
+	go c.doStartKeepAliveLoop(ctx)
 	return nil
+}
+
+func (c *stateController) doStartKeepAliveLoop(ctx context.Context) {
+	tickerCh := time.NewTicker(5 * time.Minute)
+	defer tickerCh.Stop()
+
+	defer zap.L().Debug("doStartKeepAliveLoop exiting....")
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tickerCh.C:
+			if err := c.streamC.Send(&userv1.ConnectRequest{
+				Type: &userv1.ConnectRequest_KeepAlive_{
+					KeepAlive: &userv1.ConnectRequest_KeepAlive{
+						SetAt: pbutils.Now(),
+					},
+				},
+			}); err != nil {
+				zap.L().Debug("Could not send keepAlive in doStartKeepAliveLoop", zap.Error(err))
+			}
+		}
+	}
 }
 
 func (c *stateController) doStartLoop(ctx context.Context) {
