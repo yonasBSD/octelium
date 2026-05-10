@@ -197,7 +197,7 @@ func getGatewaySubnet(c *corev1.ClusterConfig, nodeIdx, regionIdx int) (*subnet,
 		}
 
 		clusterNetIP := clusterNet.IP.To4()
-		octetNo2 := byte((regionIdx%16)<<16) + byte(nodeIdx%16)
+		octetNo2 := byte((regionIdx%16)<<4) | byte(nodeIdx%16)
 
 		ret.V4 = &net.IPNet{
 			IP:   net.IPv4(clusterNetIP[0], clusterNetIP[1], octetNo2, 0),
