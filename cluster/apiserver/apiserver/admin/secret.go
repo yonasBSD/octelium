@@ -122,9 +122,7 @@ func (s *Server) UpdateSecret(ctx context.Context, req *corev1.Secret) (*corev1.
 		return nil, grpcutils.InvalidArgWithErr(err)
 	}
 
-	sec, err := s.octeliumC.CoreC().GetSecret(ctx, &rmetav1.GetOptions{
-		Name: req.Metadata.Name,
-	})
+	sec, err := s.octeliumC.CoreC().GetSecret(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}

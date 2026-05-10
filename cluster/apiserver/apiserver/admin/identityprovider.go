@@ -110,10 +110,6 @@ func (s *Server) DeleteIdentityProvider(ctx context.Context, req *metav1.DeleteO
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
 	_, err = s.octeliumC.CoreC().DeleteIdentityProvider(ctx, apivalidation.ObjectToRDeleteOptions(g))
 	if err != nil {
 		return nil, serr.K8sInternal(err)
@@ -284,7 +280,7 @@ func (s *Server) validateIdentityProvider(ctx context.Context, req *corev1.Ident
 			}
 		case *corev1.IdentityProvider_Spec_OIDCIdentityToken_JwksURL:
 			if !govalidator.IsURL(typ.GetJwksURL()) {
-				return grpcutils.InvalidArg("Invalid issuer URL")
+				return grpcutils.InvalidArg("Invalid JWKS URL")
 			}
 		default:
 			return grpcutils.InvalidArg("You must set either an issuerURL, JWKS Content or JWKS URL")

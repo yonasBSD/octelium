@@ -134,6 +134,16 @@ func (s *Server) DeleteUser(ctx context.Context, req *metav1.DeleteOptions) (*me
 		return nil, err
 	}
 
+	if !ldflags.IsTest() {
+		i, err := userctx.GetUserCtx(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if i.User.Metadata.Uid == usr.Metadata.Uid {
+			return nil, grpcutils.Unauthorized("You cannot delete your own User account")
+		}
+	}
+
 	_, err = s.octeliumC.CoreC().DeleteUser(ctx, apivalidation.ObjectToRDeleteOptions(usr))
 	if err != nil {
 		return nil, err
@@ -189,7 +199,7 @@ func (s *Server) CheckAndSetUser(ctx context.Context,
 			return serr.InvalidArg("The email `%s` already exists for another User", req.Spec.Email)
 		}
 
-		// specLabels["email"] = slug.Make(req.Spec.Email)
+		specLabels["email"] = slug.Make(req.Spec.Email)
 	}
 
 	if req.Spec.Authentication != nil {

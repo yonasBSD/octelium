@@ -32,6 +32,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/sessionc"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
@@ -198,7 +199,7 @@ func (s *Server) GenerateCredentialToken(ctx context.Context, req *corev1.Genera
 			return nil, grpcutils.K8sNotFoundOrInternalWithErr(err)
 		}
 
-		if len(sessList.Items) > 0 {
+		if len(sessList.Items) > 0 && !ucorev1.ToSession(sessList.Items[0]).IsExpired() {
 			sess := sessList.Items[0]
 
 			sessionc.SetCurrAuthentication(&sessionc.SetCurrAuthenticationOpts{

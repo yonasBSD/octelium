@@ -138,10 +138,12 @@ func (s *Server) UpdateConfig(ctx context.Context, req *corev1.Config) (*corev1.
 		return nil, serr.InternalWithErr(err)
 	}
 
+	item.Data = nil
+
 	return item, nil
 }
 
-func (s *Server) validateConfig(ctx context.Context, itm *corev1.Config) error {
+func (s *Server) validateConfig(_ context.Context, itm *corev1.Config) error {
 
 	if err := apivalidation.ValidateCommon(itm, &apivalidation.ValidateCommonOpts{
 		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
