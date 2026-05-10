@@ -96,11 +96,29 @@ func (s *Server) Connect(stream userv1.MainService_ConnectServer) error {
 	s.connServer.addConnectedSess(i.Session, stream)
 	defer s.connServer.removeConnectedSess(i.Session.Metadata.Uid)
 
+	recvErrCh := make(chan error, 1)
+	go func() {
+		defer zap.L().Debug("Exiting Connect recv loop", zap.String("session", i.Session.Metadata.Name))
+		for {
+			msg, err := stream.Recv()
+			if err != nil {
+				recvErrCh <- err
+				return
+			}
+			switch msg.Type.(type) {
+			case *userv1.ConnectRequest_KeepAlive_:
+			}
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
 			zap.L().Debug("Exiting GetConnectionState",
 				zap.String("sessName", i.Session.Metadata.Name), zap.Error(ctx.Err()))
+			return nil
+		case err := <-recvErrCh:
+			zap.L().Debug("Client stream closed", zap.Error(err))
 			return nil
 		case <-tickerCh.C:
 			if sess, err := s.octeliumC.CoreC().GetSession(ctx,
