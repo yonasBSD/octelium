@@ -46,7 +46,11 @@ func (e *opaEngine) EvalPolicy(ctx context.Context, script string, input map[str
 		return false, nil
 	}
 
-	return res.(bool), nil
+	b, ok := res.(bool)
+	if !ok {
+		return false, errors.Errorf("OPA policy rule must return a boolean, got %T", res)
+	}
+	return b, nil
 }
 
 func (e *opaEngine) AddPolicy(ctx context.Context, script string) error {
