@@ -19,6 +19,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -101,7 +102,7 @@ func getVirtualHostAPI(_ context.Context, r *GetListenersReq) (*routev3.VirtualH
 				{
 					MatchPattern: &envoy_type_matcher.StringMatcher_SafeRegex{
 						SafeRegex: &matcherv3.RegexMatcher{
-							Regex: fmt.Sprintf(`^https://([a-zA-Z0-9-]+\.)*%s(:[0-9]+)?$`, domain),
+							Regex: fmt.Sprintf(`^https://([a-zA-Z0-9-]+\.)*%s(:[0-9]+)?$`, regexp.QuoteMeta(domain)),
 						},
 					},
 				},
