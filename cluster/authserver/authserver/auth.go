@@ -305,6 +305,7 @@ func (s *server) setAuthCallbackResponse(r *http.Request, w http.ResponseWriter,
 
 		s.setLoginCookies(w, accessToken, refreshToken, sess)
 		s.redirectToAuthenticatorRegister(w, r)
+		return nil
 	default:
 		return errors.Errorf("Unhandled authenticatorAction")
 	}
