@@ -63,7 +63,6 @@ func (s *Server) setNodePublicIPs(ctx context.Context) error {
 	if len(s.publicIPs) == 0 {
 		if err := s.setExternalIPFromNode(ctx); err != nil {
 			zap.L().Debug("Could not find the node public IP addr via k8s node", zap.Error(err))
-
 		}
 	}
 
@@ -124,7 +123,7 @@ func (s *Server) setExternalIPFromNode(ctx context.Context) error {
 		}
 	}
 
-	return errors.Errorf("Could not get external IP from node k8s resource")
+	return nil
 }
 
 func (s *Server) setExternalIPFromDev() error {
