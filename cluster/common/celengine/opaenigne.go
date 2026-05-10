@@ -99,16 +99,9 @@ func (e *opaEngine) doEvalPolicy(ctx context.Context, script string, input map[s
 		return nil, err
 	}
 
-	if len(rs) < 1 || len(rs[0].Expressions) < 1 {
-		return nil, errors.Errorf("No expressions")
+	if len(rs) == 0 || len(rs[0].Expressions) == 0 {
+		return nil, errors.Errorf("OPA evaluation produced no results")
 	}
 
-	expr := fmt.Sprintf("data.octelium.%s.%s", mod, qry)
-	for _, exp := range rs[0].Expressions {
-		if exp.Text == expr {
-			return exp.Value, nil
-		}
-	}
-
-	return nil, errors.Errorf("Could not find %s", expr)
+	return rs[0].Expressions[0].Value, nil
 }
