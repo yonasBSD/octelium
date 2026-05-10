@@ -108,6 +108,10 @@ func GetUserFromIdentifier(ctx context.Context, opts *GetUserFromIdentifierOpts)
 		return nil, errors.Errorf("Invalid User type")
 	}
 
+	if usr.Status.IsLocked {
+		return nil, errors.Errorf("User is locked")
+	}
+
 	userAccount := func() *corev1.User_Spec_Authentication_Identity {
 		if usr.Spec.Authentication == nil {
 			return nil

@@ -187,7 +187,7 @@ func (c *Connector) HandleCallback(r *http.Request, reqID string) (*corev1.Sessi
 	nonce, _ := claims["nonce"].(string)
 
 	if nonce != reqID {
-		return nil, errors.Errorf("Invalid nonce: Given = %s. Correct: %s", nonce, reqID)
+		return nil, errors.Errorf("Nonce mismatch")
 	}
 
 	ret := &corev1.Session_Status_Authentication_Info{
