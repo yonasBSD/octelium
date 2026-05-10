@@ -172,8 +172,10 @@ func (s *Server) DoInitConnect(ctx context.Context, req *userv1.ConnectRequest_I
 			return nil, nil
 		}
 
-		if err := apivalidation.ValidatePort(int(req.ServiceOptions.PortStart)); err != nil {
-			return nil, err
+		if req.ServiceOptions.PortStart != 0 {
+			if err := apivalidation.ValidatePort(int(req.ServiceOptions.PortStart)); err != nil {
+				return nil, err
+			}
 		}
 
 		if len(req.ServiceOptions.Services) > 128 {
