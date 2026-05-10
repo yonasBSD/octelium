@@ -164,7 +164,10 @@ func (e *CELEngine) getOrSetProg(_ context.Context, exp string, typ *types.Type)
 		}
 	*/
 
-	prg, err := e.env.Program(ast, cel.EvalOptions(cel.OptOptimize))
+	prg, err := e.env.Program(ast,
+		cel.EvalOptions(cel.OptOptimize),
+		cel.CostLimit(1_000_000),
+		cel.InterruptCheckFrequency(100))
 	if err != nil {
 		return nil, err
 	}
