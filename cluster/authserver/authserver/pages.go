@@ -146,6 +146,10 @@ func (s *server) isURLSameClusterOrigin(arg string) bool {
 		return false
 	}
 
+	if redirectURL.Scheme != "https" {
+		return false
+	}
+
 	hostname := redirectURL.Hostname()
 
 	switch {

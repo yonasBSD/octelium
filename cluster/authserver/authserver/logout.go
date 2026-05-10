@@ -25,6 +25,8 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -77,6 +79,10 @@ func (s *server) doLogout(ctx context.Context, _ *authv1.LogoutRequest) (*authv1
 
 		for _, cookie := range logoutCookies {
 			md["set-cookie"] = append(md["set-cookie"], cookie.String())
+		}
+
+		if err := grpc.SetHeader(ctx, md); err != nil { // ← was missing
+			zap.L().Warn("Could not set logout cookies in gRPC header", zap.Error(err))
 		}
 	}
 

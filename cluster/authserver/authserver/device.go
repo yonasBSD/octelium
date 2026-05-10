@@ -237,7 +237,12 @@ func (s *server) loadDeviceRegistrationBeginReq(ctx context.Context, sess *corev
 	if err := json.Unmarshal(resp.Data, &respMap); err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
-	sessUID := respMap["sessUID"].(string)
+
+	sessUID, ok := respMap["sessUID"].(string)
+	if !ok || sessUID == "" {
+		return nil, grpcutils.InvalidArg("Invalid session UID in registration state")
+	}
+
 	if sessUID != sess.Metadata.Uid {
 		return nil, grpcutils.InvalidArg("Invalid Session")
 	}

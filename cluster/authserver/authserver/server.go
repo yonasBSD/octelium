@@ -441,14 +441,21 @@ func (s *server) run(ctx context.Context, grpcMode bool) error {
 			}
 		})
 
-		go func() error {
+		go func() {
 			srv := &http.Server{
 				Handler:      mux,
 				Addr:         vutils.ManagedServiceAddr,
 				WriteTimeout: 15 * time.Second,
 				ReadTimeout:  15 * time.Second,
+
+				ReadHeaderTimeout: 5 * time.Second,
+				IdleTimeout:       60 * time.Second,
+				MaxHeaderBytes:    32 * 1024,
 			}
-			return srv.ListenAndServe()
+
+			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				zap.L().Error("AuthServer HTTP server exited", zap.Error(err))
+			}
 		}()
 	}
 

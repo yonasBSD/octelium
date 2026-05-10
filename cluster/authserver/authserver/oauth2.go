@@ -306,6 +306,16 @@ func (s *server) handleOAuth2TokenClientCredentialsOIDC(w http.ResponseWriter, r
 		return
 	}
 
+	if usr.Spec.Type != corev1.User_Spec_WORKLOAD {
+		s.returnOAuth2Err(w, "invalid_request", 400)
+		return
+	}
+
+	if usr.Spec.IsDisabled {
+		s.returnOAuth2Err(w, "invalid_request", 400)
+		return
+	}
+
 	scopeStr := r.Form.Get("scope")
 	scopes, err := checkAndGetOAuthScopeStr(scopeStr)
 	if err != nil {

@@ -151,13 +151,10 @@ func (s *server) handleAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
+
+	r.Body = http.MaxBytesReader(w, r.Body, 512)
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if len(b) > 512 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
