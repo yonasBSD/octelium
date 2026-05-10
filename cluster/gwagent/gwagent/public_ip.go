@@ -37,13 +37,17 @@ func (s *Server) setNodePublicIPs(ctx context.Context) error {
 	node := s.node
 
 	if nIP, ok := node.Annotations["octelium.com/override-gw-ip"]; ok {
-		s.publicIPs = append(s.publicIPs, nIP)
-		return nil
+		s.doAppendPublicIPAddr(nIP)
+		if len(s.publicIPs) > 0 {
+			return nil
+		}
 	}
 
 	if nIP, ok := node.Annotations["octelium.com/public-ip-test"]; ok {
-		s.publicIPs = append(s.publicIPs, nIP)
-		return nil
+		s.doAppendPublicIPAddr(nIP)
+		if len(s.publicIPs) > 0 {
+			return nil
+		}
 	}
 
 	if ipv4, ok := node.Annotations["octelium.com/public-ipv4"]; ok {
