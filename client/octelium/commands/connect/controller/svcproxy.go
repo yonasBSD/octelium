@@ -263,10 +263,15 @@ func (l *listener) resolveService() (net.IP, error) {
 	}
 
 	if l.ctl.ipv6Supported {
-		record := r.Answer[0].(*dns.AAAA)
-		return record.AAAA, nil
+		if record, ok := r.Answer[0].(*dns.AAAA); ok {
+			return record.AAAA, nil
+		}
+
 	} else {
-		record := r.Answer[0].(*dns.A)
-		return record.A, nil
+		if record, ok := r.Answer[0].(*dns.A); ok {
+			return record.A, nil
+		}
 	}
+
+	return nil, errors.Errorf("Could not resolve Service: %s...", l.svcFQDN)
 }
