@@ -195,11 +195,13 @@ func (s *Server) handleConn(ctx context.Context, c net.Conn) {
 	})
 	if err != nil {
 		zap.L().Debug("Could not auth conn. Closing...", zap.Error(err))
+		sshConn.Close()
 		c.Close()
 		return
 	}
 
 	if !authResp.IsAuthenticated {
+		sshConn.Close()
 		c.Close()
 		return
 	}
@@ -217,6 +219,7 @@ func (s *Server) handleConn(ctx context.Context, c net.Conn) {
 			},
 		}
 		otelutils.EmitAccessLog(logE)
+		sshConn.Close()
 		c.Close()
 		return
 	}
