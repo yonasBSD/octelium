@@ -68,7 +68,7 @@ type Upstream struct {
 
 var ErrNoUpstream = errors.Errorf("No upstreams found")
 
-func (l *LBManager) getUpstreamFromSvc(ctx context.Context,
+func (l *LBManager) getUpstreamFromSvc(_ context.Context,
 	svc *corev1.Service, cfg *corev1.Service_Spec_Config) (*Upstream, error) {
 
 	upstrs := ucorev1.ToService(svc).GetAllUpstreamEndpointsByConfig(cfg)
@@ -122,6 +122,10 @@ func (l *LBManager) getUpstreamFromSvc(ctx context.Context,
 		host = connAddr.Ipv6
 	case ucorev1.ToSession(sess).HasV4():
 		host = connAddr.Ipv4
+	}
+
+	if host == "" {
+		return nil, ErrNoUpstream
 	}
 
 	port := int(upstream.Port)
