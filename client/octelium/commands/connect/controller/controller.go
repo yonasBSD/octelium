@@ -96,6 +96,7 @@ func NewController(c *cliconfigv1.Connection) (*Controller, error) {
 
 	privK, err := wgtypes.NewKey(c.Connection.X25519Key)
 	if err != nil {
+		wgClient.Close()
 		return nil, err
 	}
 

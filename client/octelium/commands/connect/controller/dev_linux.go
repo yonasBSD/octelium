@@ -329,22 +329,20 @@ func (c *Controller) doInitDevTunWG(ctx context.Context) error {
 		return errors.Errorf("Could not listen UAPI: %+v", err)
 	}
 
-	go func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				conn, err := uapi.Accept()
-				if err != nil {
-					zap.S().Debugf("Could not accept UAPI conn: %+v", err)
-					return
-				}
-				go device.IpcHandle(conn)
-			}
-
-		}
+	go func(cxt context.Context) {
+		<-ctx.Done()
+		uapi.Close()
 	}(ctx)
+
+	go func() {
+		for {
+			conn, err := uapi.Accept()
+			if err != nil {
+				return
+			}
+			go device.IpcHandle(conn)
+		}
+	}()
 
 	c.dev = device
 	c.uapi = uapi
