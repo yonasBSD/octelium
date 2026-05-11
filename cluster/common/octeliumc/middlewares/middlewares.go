@@ -58,6 +58,12 @@ func handleErr(err error) {
 		zap.L().Warn("octeliumC internal error", zap.Error(err))
 	case grpcerr.IsDeadlineExceeded(err):
 		zap.L().Debug("octeliumC deadline exceeded", zap.Error(err))
+	case grpcerr.IsUnknown(err):
+		zap.L().Warn("octeliumC unknown error", zap.Error(err))
+	case grpcerr.IsUnimplemented(err):
+		zap.L().Warn("octeliumC unimplemented error", zap.Error(err))
+	case grpcerr.IsResourceChanged(err):
+		zap.L().Debug("octeliumC resource changed", zap.Error(err))
 	}
 }
 
@@ -117,7 +123,7 @@ func getRetryCodes() []codes.Code {
 		codes.Unknown,
 		codes.Aborted,
 		codes.DataLoss,
-		codes.Internal,
+		// codes.Internal,
 		codes.DeadlineExceeded,
 	}
 }
