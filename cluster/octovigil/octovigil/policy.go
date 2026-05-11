@@ -99,8 +99,7 @@ func (s *Server) doGetDecision(ctx context.Context,
 			reqCtxMap: reqCtxMap,
 		})
 		if err != nil {
-			zap.L().Debug("Could not getDecisionRule of denyRule", zap.Error(err))
-			continue
+			return nil, err
 		}
 		if res.decision == matchDecisionMATCH_YES {
 			ret := &getDecisionResp{
