@@ -76,13 +76,19 @@ func (m *middleware) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		(cfg != nil && cfg.GetHttp() != nil &&
 			cfg.GetHttp().Auth != nil &&
 			cfg.GetHttp().Auth.GetSigv4() != nil) {
-		additional.Body, err = io.ReadAll(req.Body)
+		defer req.Body.Close()
+
+		limit := getMaxBodySize(cfg)
+		body, err := io.ReadAll(io.LimitReader(req.Body, limit+1))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		req.Body.Close()
-
+		if int64(len(body)) > limit {
+			w.WriteHeader(http.StatusRequestEntityTooLarge)
+			return
+		}
+		additional.Body = body
 		reqCtx.Body = additional.Body
 
 		if cfg != nil && cfg.GetHttp() != nil && cfg.GetHttp().Body != nil {
@@ -269,4 +275,19 @@ func getDownstreamSource(r *http.Request) *coctovigilv1.DownstreamRequest_Source
 		Address: address,
 		Port:    int32(portInt),
 	}
+}
+
+const defaultMaxBodySize = 32 * 1024 * 1024
+
+func getMaxBodySize(svcCfg *corev1.Service_Spec_Config) int64 {
+	if svcCfg != nil && svcCfg.GetHttp() != nil &&
+		svcCfg.GetHttp().Body != nil &&
+		svcCfg.GetHttp().Body.MaxRequestSize > 0 {
+		configured := svcCfg.GetHttp().Body.MaxRequestSize
+		if configured > 64*1024*1024 {
+			return 64 * 1024 * 1024
+		}
+		return int64(configured)
+	}
+	return defaultMaxBodySize
 }
