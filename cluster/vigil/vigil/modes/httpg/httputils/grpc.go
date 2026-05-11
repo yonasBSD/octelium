@@ -31,6 +31,10 @@ type GRPCInfo struct {
 
 func GetGRPCInfo(path string) (*GRPCInfo, error) {
 
+	if !strings.HasPrefix(path, "/") {
+		return nil, errors.Errorf("gRPC path must start with /")
+	}
+
 	ret := &GRPCInfo{}
 	slashParts := strings.Split(path, "/")
 	if len(slashParts) != 3 {
