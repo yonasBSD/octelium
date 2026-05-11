@@ -28,6 +28,7 @@ import (
 	"github.com/octelium/octelium/apis/cluster/coctovigilv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/otelutils"
 	"github.com/octelium/octelium/cluster/common/sshutils"
@@ -258,8 +259,16 @@ func (s *Server) handleConn(ctx context.Context, c net.Conn) {
 	}
 
 	if ucorev1.ToService(svc).IsESSH() {
+
+		sshUser := sshConn.User()
+		if err := apivalidation.ValidateName(sshUser, 0, 0); err != nil {
+			sshConn.Close()
+			c.Close()
+			return
+		}
+
 		upstreamSession, err = s.octeliumC.CoreC().GetSession(ctx, &rmetav1.GetOptions{
-			Name: sshConn.User(),
+			Name: sshUser,
 		})
 		if err != nil {
 			zap.L().Debug("Could not find eSSH Session from ssh user", zap.Error(err))
