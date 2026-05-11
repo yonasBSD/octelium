@@ -32,10 +32,11 @@ func doRunDetached(domain string, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer m.Disconnect()
 
 	path, err := os.Executable()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	svcName := getWindowSvcName(domain)
