@@ -39,7 +39,7 @@ func (c *Controller) getWgConf() (*conf.Config, error) {
 			addrs = append(addrs, naddr)
 		}
 
-		if c.ipv6Supported && addr.V4 != "" {
+		if c.ipv6Supported && addr.V6 != "" {
 			naddr, err := netip.ParsePrefix(addr.V6)
 			if err != nil {
 				return nil, err
@@ -62,6 +62,10 @@ func (c *Controller) getWgConf() (*conf.Config, error) {
 		key, err := conf.NewPrivateKeyFromString(gw.Wireguard.PublicKey)
 		if err != nil {
 			return nil, err
+		}
+
+		if len(gw.Addresses) == 0 {
+			continue
 		}
 
 		allowedIPs := []netip.Prefix{}
