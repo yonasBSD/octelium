@@ -95,13 +95,12 @@ func (r *roundTripper) getRoundTripperHTTP2(req *http.Request, svc *corev1.Servi
 
 		return &http2.Transport{
 			TLSClientConfig: tlsCfg,
-			DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+			DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
 				dialer := &net.Dialer{
 					Timeout:   30 * time.Second,
 					KeepAlive: 30 * time.Second,
 				}
-
-				return dialer.Dial(network, addr)
+				return dialer.DialContext(ctx, network, addr)
 			},
 			AllowHTTP: true,
 		}, nil
