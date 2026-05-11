@@ -101,6 +101,12 @@ func (t *recorder) doRun(ctx context.Context) {
 }
 
 func (t *recorder) setRecordLog(record *recordingChunk, typ corev1.AccessLog_Entry_Info_SSH_SessionRecording_Type) {
+
+	t.sequence.Lock()
+	seq := t.sequence.val
+	t.sequence.val++
+	t.sequence.Unlock()
+
 	logE := logentry.InitializeLogEntry(&logentry.InitializeLogEntryOpts{
 		StartTime:       t.createdAt,
 		IsAuthenticated: true,
@@ -108,12 +114,8 @@ func (t *recorder) setRecordLog(record *recordingChunk, typ corev1.AccessLog_Ent
 		ReqCtx:          t.dctx.i,
 		ConnectionID:    t.dctx.id,
 		SessionID:       t.sessionID,
-		Sequence:        t.sequence.val,
+		Sequence:        seq,
 	})
-
-	t.sequence.Lock()
-	t.sequence.val = t.sequence.val + 1
-	t.sequence.Unlock()
 
 	logE.Entry.Info.Type = &corev1.AccessLog_Entry_Info_Ssh{
 		Ssh: &corev1.AccessLog_Entry_Info_SSH{
