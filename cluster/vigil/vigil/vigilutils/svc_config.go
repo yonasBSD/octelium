@@ -46,7 +46,7 @@ func GetServiceConfig(ctx context.Context, req *coctovigilv1.AuthenticateAndAuth
 		return svc.Spec.Config
 	}
 
-	if len(svc.Spec.DynamicConfig.Configs) < 1 {
+	if svc.Spec.DynamicConfig == nil || len(svc.Spec.DynamicConfig.Configs) < 1 {
 		return svc.Spec.Config
 	}
 

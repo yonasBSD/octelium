@@ -467,6 +467,13 @@ func SetCurrAuthentication(o *SetCurrAuthenticationOpts) {
 		}
 
 		sess.Status.Authentication.Info.Downstream.UserAgent = userAgent
+
+		uaParts := strings.Split(o.UserAgent, " ")
+		if len(uaParts) > 0 && strings.HasPrefix(uaParts[0], "octelium-cli/") {
+			if args := strings.Split(uaParts[0], "/"); len(args) == 2 {
+				sess.Status.Authentication.Info.Downstream.ClientVersion = args[1]
+			}
+		}
 	}
 
 }
