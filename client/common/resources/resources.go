@@ -18,6 +18,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -77,7 +78,13 @@ func LoadResources(fPath string, newObjFn func(kind string) (umetav1.ResourceObj
 					return nil
 				}
 
-				zap.S().Debugf("getting resources from the file: %s", path)
+				switch strings.ToLower(filepath.Ext(path)) {
+				case ".yaml", ".yml":
+				default:
+					return nil
+				}
+
+				zap.L().Debug("getting resources", zap.String("path", path))
 
 				f, err := os.Open(path)
 				if err != nil {
