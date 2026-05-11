@@ -203,7 +203,13 @@ func (s *Server) DoInitConnect(ctx context.Context, req *userv1.ConnectRequest_I
 		var ret []*corev1.Session_Status_Connection_ServiceOptions_RequestedService
 		for _, svcReq := range req.ServiceOptions.Services {
 
-			svc, err := s.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{Name: vutils.GetServiceFullNameFromName(svcReq.Name)})
+			svcName := vutils.GetServiceFullNameFromName(svcReq.Name)
+			if err := apivalidation.ValidateName(svcName, 0, 1); err != nil {
+				return nil, err
+			}
+
+			svc, err := s.octeliumC.CoreC().GetService(ctx,
+				&rmetav1.GetOptions{Name: svcName})
 			if err != nil {
 				switch {
 				case grpcerr.IsNotFound(err):
@@ -239,9 +245,14 @@ func (s *Server) DoInitConnect(ctx context.Context, req *userv1.ConnectRequest_I
 
 		var ret []*corev1.Session_Status_Connection_PublishedService
 		for _, svcReq := range req.PublishedServices {
+			svcName := vutils.GetServiceFullNameFromName(svcReq.Name)
+			if err := apivalidation.ValidateName(svcName, 0, 1); err != nil {
+				return nil, err
+			}
+
 			svc, err := s.octeliumC.CoreC().GetService(ctx,
 				&rmetav1.GetOptions{
-					Name: vutils.GetServiceFullNameFromName(svcReq.Name),
+					Name: svcName,
 				})
 			if err != nil {
 				switch {

@@ -34,6 +34,10 @@ func (s *Server) ListService(ctx context.Context, req *userv1.ListServiceOptions
 	var ns *corev1.Namespace
 	var err error
 	if req.Namespace != "" {
+		if err := apivalidation.ValidateName(req.Namespace, 0, 0); err != nil {
+			return nil, err
+		}
+
 		ns, err = s.octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{
 			Name: req.Namespace,
 		})
