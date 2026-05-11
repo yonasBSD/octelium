@@ -1079,6 +1079,7 @@ func (s *server) runOcteliumctlApplyCommands(ctx context.Context) error {
 				_, err = conn.Exec(fmt.Sprintf("INSERT INTO example VALUES (1, '%s')", arg))
 				assert.Nil(t, err)
 
+				time.Sleep(3 * time.Second)
 				row := conn.QueryRow("SELECT * FROM example")
 				var col1 uint8
 				var col2 string
