@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/cel-go/common/types"
@@ -77,10 +78,80 @@ func (e *CELEngine) EvalPolicy(ctx context.Context, exp string, input map[string
 
 	out, _, err := prg.ContextEval(ctx, input)
 	if err != nil {
+		if isCELMissingInputErr(ctx, err) {
+			return false, nil
+		}
 		return false, err
 	}
 
-	return out.Value().(bool), nil
+	v, ok := out.Value().(bool)
+	if !ok {
+		return false, errors.Errorf(
+			"CEL policy did not evaluate to bool: expression=%q type=%v value=%v",
+			exp,
+			out.Type(),
+			out.Value(),
+		)
+	}
+
+	return v, nil
+}
+
+func isCELMissingInputErr(ctx context.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if ctx != nil {
+		if cerr := ctx.Err(); cerr != nil {
+			return false
+		}
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+
+	msg := strings.ToLower(err.Error())
+
+	switch {
+	case strings.Contains(msg, "cost limit"):
+		return false
+	case strings.Contains(msg, "operation cancelled"):
+		return false
+	case strings.Contains(msg, "operation canceled"):
+		return false
+	case strings.Contains(msg, "interrupted"):
+		return false
+	}
+
+	switch {
+	case strings.Contains(msg, "no such key"):
+		return true
+	case strings.Contains(msg, "no such field"):
+		return true
+	case strings.Contains(msg, "undefined field"):
+		return true
+	case strings.Contains(msg, "unknown field"):
+		return true
+	case strings.Contains(msg, "no such attribute"):
+		return true
+	case strings.Contains(msg, "no such attribute(s)"):
+		return true
+	}
+
+	if strings.Contains(msg, "null") &&
+		(strings.Contains(msg, "field") ||
+			strings.Contains(msg, "select") ||
+			strings.Contains(msg, "attribute")) {
+		return true
+	}
+
+	if strings.Contains(msg, "index out of bounds") ||
+		strings.Contains(msg, "index out of range") {
+		return true
+	}
+
+	return false
 }
 
 func (e *CELEngine) EvalPolicyString(ctx context.Context, exp string, input map[string]any) (string, error) {

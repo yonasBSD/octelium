@@ -563,4 +563,133 @@ func TestEvalPolicy(t *testing.T) {
 		assert.Nil(t, err)
 		assert.False(t, res)
 	}
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`ctx.user.nonExistent.isActive`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"spec": map[string]any{
+							"isActive": true,
+						},
+					},
+				},
+			})
+		assert.Nil(t, err)
+		assert.False(t, res)
+	}
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`ctx.user.spec.isActive`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"spec": map[string]any{
+							"isActive": true,
+						},
+					},
+				},
+			})
+		assert.Nil(t, err)
+		assert.True(t, res)
+	}
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`ctx.user.spec.groups[2] == "group2"`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"spec": map[string]any{
+							"isActive": true,
+						},
+					},
+				},
+			})
+		assert.Nil(t, err)
+		assert.False(t, res)
+	}
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`ctx.user.spec.groups[2] == "group2"`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"spec": map[string]any{
+							"groups": []string{"group0", "group1"},
+						},
+					},
+				},
+			})
+		assert.Nil(t, err)
+		assert.False(t, res)
+	}
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`ctx.user.spec.groups[2] == "group2"`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"spec": map[string]any{
+							"groups": []string{"group0", "group1", "group2"},
+						},
+					},
+				},
+			})
+		assert.Nil(t, err)
+		assert.True(t, res)
+	}
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`ctx.user.metadata.name.toUpper() == "JOHN"`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"metadata": map[string]any{
+							"name": "john",
+						},
+					},
+				},
+			})
+		assert.Nil(t, err)
+		assert.True(t, res)
+	}
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`ctx.user.metadata.name.toUppppper() == "JOHN"`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"metadata": map[string]any{
+							"name": "john",
+						},
+					},
+				},
+			})
+		assert.NotNil(t, err)
+		assert.False(t, res)
+	}
+
+
+	{
+		res, err := srv.EvalPolicy(ctx,
+			`isNonExistentFunc(ctx.user.metadata.name)"`,
+			map[string]any{
+				"ctx": map[string]any{
+					"user": map[string]any{
+						"metadata": map[string]any{
+							"name": "john",
+						},
+					},
+				},
+			})
+		assert.NotNil(t, err)
+		assert.False(t, res)
+	}
 }
