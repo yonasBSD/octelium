@@ -24,6 +24,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"sync"
 
 	"context"
@@ -393,8 +395,9 @@ func (s *Server) serve(ctx context.Context) error {
 	}
 
 	go func() {
-		s.srv.Serve(s.lis)
-		zap.L().Debug("srv done serving")
+		if err := s.srv.Serve(s.lis); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			zap.L().Error("HTTP server exited...", zap.Error(err))
+		}
 	}()
 
 	return nil
