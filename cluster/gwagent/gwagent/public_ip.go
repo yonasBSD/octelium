@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
@@ -37,15 +38,15 @@ func (s *Server) setNodePublicIPs(ctx context.Context) error {
 	node := s.node
 
 	if nIP, ok := node.Annotations["octelium.com/override-gw-ip"]; ok {
-		s.doAppendPublicIPAddr(nIP)
-		if len(s.publicIPs) > 0 {
+		if mIP := strings.TrimSpace(nIP); govalidator.IsIP(mIP) {
+			s.publicIPs = []string{mIP}
 			return nil
 		}
 	}
 
 	if nIP, ok := node.Annotations["octelium.com/public-ip-test"]; ok {
-		s.doAppendPublicIPAddr(nIP)
-		if len(s.publicIPs) > 0 {
+		if mIP := strings.TrimSpace(nIP); govalidator.IsIP(mIP) {
+			s.publicIPs = []string{mIP}
 			return nil
 		}
 	}
