@@ -51,8 +51,13 @@ func unaryClientInterceptor() grpc.UnaryClientInterceptor {
 }
 
 func handleErr(err error) {
-	if grpcerr.IsInternal(err) || grpcerr.IsUnknown(err) || grpcerr.IsDeadlineExceeded(err) || grpcerr.IsUnavailable(err) {
-		zap.L().Debug("octeliumC err", zap.Error(err))
+	switch {
+	case grpcerr.IsUnavailable(err):
+		zap.L().Warn("octeliumC unavailable", zap.Error(err))
+	case grpcerr.IsInternal(err):
+		zap.L().Warn("octeliumC internal error", zap.Error(err))
+	case grpcerr.IsDeadlineExceeded(err):
+		zap.L().Debug("octeliumC deadline exceeded", zap.Error(err))
 	}
 }
 
