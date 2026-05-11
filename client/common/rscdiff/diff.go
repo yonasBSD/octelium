@@ -230,6 +230,10 @@ func (c *diffCtl) setCurrentItems(ctx context.Context) error {
 			return err
 		}
 
+		if !c.client.MethodByName(fmt.Sprintf("List%s", c.kind)).IsValid() {
+			return errors.Errorf("Unsupported kind: %s", c.kind)
+		}
+
 		res := c.client.MethodByName(fmt.Sprintf("List%s", c.kind)).Call(
 			[]reflect.Value{
 				reflect.ValueOf(ctx),
@@ -369,6 +373,10 @@ func (c diffCtl) doCreateItem(ctx context.Context, item umetav1.ResourceObjectI)
 
 	zap.L().Debug("Creating item", zap.Any("item", item))
 
+	if !c.client.MethodByName(fmt.Sprintf("Create%s", c.kind)).IsValid() {
+		return errors.Errorf("Unsupported kind: %s", c.kind)
+	}
+
 	res := c.client.MethodByName(fmt.Sprintf("Create%s", c.kind)).Call(
 		[]reflect.Value{
 			reflect.ValueOf(ctx),
@@ -391,6 +399,10 @@ func (c *diffCtl) doUpdateItem(ctx context.Context, item umetav1.ResourceObjectI
 
 	zap.L().Debug("Updating item", zap.Any("item", item))
 
+	if !c.client.MethodByName(fmt.Sprintf("Update%s", c.kind)).IsValid() {
+		return errors.Errorf("Unsupported kind: %s", c.kind)
+	}
+
 	res := c.client.MethodByName(fmt.Sprintf("Update%s", c.kind)).Call(
 		[]reflect.Value{
 			reflect.ValueOf(ctx),
@@ -412,6 +424,10 @@ func (c *diffCtl) doUpdateItem(ctx context.Context, item umetav1.ResourceObjectI
 func (c *diffCtl) doDeleteItem(ctx context.Context, item umetav1.ResourceObjectI) error {
 
 	zap.L().Debug("Deleting item", zap.Any("item", item))
+
+	if !c.client.MethodByName(fmt.Sprintf("Delete%s", c.kind)).IsValid() {
+		return errors.Errorf("Unsupported kind: %s", c.kind)
+	}
 
 	res := c.client.MethodByName(fmt.Sprintf("Delete%s", c.kind)).Call(
 		[]reflect.Value{
