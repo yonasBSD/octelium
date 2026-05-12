@@ -56,7 +56,7 @@ func (s *Server) CreateUser(ctx context.Context, req *corev1.User) (*corev1.User
 		Status:   &corev1.User_Status{},
 	}
 
-	if err := s.CheckAndSetUser(ctx, s.octeliumC, item, false); err != nil {
+	if err := s.checkAndSetUser(ctx, s.octeliumC, item, false, false); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +85,7 @@ func (s *Server) UpdateUser(ctx context.Context, req *corev1.User) (*corev1.User
 	common.MetadataUpdate(item.Metadata, req.Metadata)
 	item.Spec = req.Spec
 
-	if err := s.CheckAndSetUser(ctx, s.octeliumC, item, false); err != nil {
+	if err := s.checkAndSetUser(ctx, s.octeliumC, item, false, true); err != nil {
 		return nil, err
 	}
 
@@ -152,8 +152,8 @@ func (s *Server) DeleteUser(ctx context.Context, req *metav1.DeleteOptions) (*me
 	return &metav1.OperationResult{}, nil
 }
 
-func (s *Server) CheckAndSetUser(ctx context.Context,
-	octeliumC octeliumc.ClientInterface, req *corev1.User, isSystem bool) error {
+func (s *Server) checkAndSetUser(ctx context.Context,
+	octeliumC octeliumc.ClientInterface, req *corev1.User, isSystem bool, isUpdate bool) error {
 
 	specLabels := make(map[string]string)
 
@@ -195,8 +195,22 @@ func (s *Server) CheckAndSetUser(ctx context.Context,
 			return serr.InternalWithErr(err)
 		}
 
-		if len(usrs.Items) > 0 && (usrs.Items[0].Metadata.Name != req.Metadata.Name) {
-			return serr.InvalidArg("The email `%s` already exists for another User", req.Spec.Email)
+		if len(usrs.Items) > 0 {
+			if isUpdate {
+				if req.Metadata.Name != "" {
+					if usrs.Items[0].Metadata.Name != req.Metadata.Name {
+						return serr.InvalidArg("The email `%s` already exists for another User", req.Spec.Email)
+					}
+				} else if req.Metadata.Uid != "" {
+					if usrs.Items[0].Metadata.Uid != req.Metadata.Uid {
+						return serr.InvalidArg("The email `%s` already exists for another User", req.Spec.Email)
+					}
+				} else {
+					return serr.InvalidArg("Cannot verify email uniqueness")
+				}
+			} else {
+				return serr.InvalidArg("The email `%s` already exists for another User", req.Spec.Email)
+			}
 		}
 
 		specLabels["email"] = slug.Make(req.Spec.Email)

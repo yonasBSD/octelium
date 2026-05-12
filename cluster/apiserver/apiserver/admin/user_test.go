@@ -28,6 +28,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/tests/tstuser"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
@@ -313,5 +314,54 @@ func TestIdentity(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, len(itmList.Items) == 1)
 		assert.Equal(t, usr.Metadata.Uid, itmList.Items[0].Metadata.Uid)
+		assert.Equal(t, usr.Metadata.SpecLabels["email"], slug.Make(usr.Spec.Email))
+
+		{
+
+			usr2T, err := tstuser.NewUserWithType(tst.C.OcteliumC, srv, nil, nil,
+				corev1.User_Spec_HUMAN, corev1.Session_Status_CLIENT)
+			assert.Nil(t, err)
+
+			usr3T, err := tstuser.NewUserWithType(tst.C.OcteliumC, srv, nil, nil,
+				corev1.User_Spec_HUMAN, corev1.Session_Status_CLIENT)
+			assert.Nil(t, err)
+
+			req := &corev1.User{
+				Metadata: &metav1.Metadata{
+					Name: utilrand.GetRandomStringCanonical(8),
+				},
+				Spec: &corev1.User_Spec{
+					Type:  corev1.User_Spec_HUMAN,
+					Email: "linus@exmaple.com",
+				},
+			}
+
+			{
+				_, err = srv.CreateUser(usr2T.Ctx(), req)
+				assert.NotNil(t, err, "%+v", err)
+				assert.True(t, grpcerr.IsInvalidArg(err))
+			}
+
+			{
+				usr3T.Usr.Spec.Email = "linus@exmaple.com"
+				_, err = srv.UpdateUser(usr3T.Ctx(), usr3T.Usr)
+				assert.NotNil(t, err, "%+v", err)
+				assert.True(t, grpcerr.IsInvalidArg(err))
+			}
+
+			_, err = srv.DeleteUser(usr2T.Ctx(), &metav1.DeleteOptions{
+				Uid: usr.Metadata.Uid,
+			})
+			assert.Nil(t, err)
+
+			_, err = srv.CreateUser(usr2T.Ctx(), req)
+			assert.Nil(t, err, "%+v", err)
+
+			req2 := pbutils.Clone(req).(*corev1.User)
+			req2.Metadata.Name = utilrand.GetRandomStringCanonical(8)
+			_, err = srv.CreateUser(usr2T.Ctx(), req2)
+			assert.NotNil(t, err, "%+v", err)
+			assert.True(t, grpcerr.IsInvalidArg(err))
+		}
 	}
 }
